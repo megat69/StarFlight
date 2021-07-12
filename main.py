@@ -90,7 +90,7 @@ skybox["entities"]["bottom"].rotation = (0, 0, 0)
 # TODO : Controller support
 
 # Creation of the player
-player = Controller(points_enabled=True, ship_model=None)
+player = Controller(points_enabled=True, ship_model=3)
 
 # Fading in the scene
 scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
