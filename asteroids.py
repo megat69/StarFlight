@@ -6,7 +6,7 @@ class Asteroid(Button):
     The asteroids of the game.
     """
 
-    def __init__(self, position=None, scale=None, player=None, shiny:bool=False):
+    def __init__(self, position=None, scale=None, player=None, shiny:bool=False, movement_vector=None):
         # Assigns a random color to the asteroid
         if shiny is False:
             asteroid_color = color.rgb(randint(63, 67), randint(38, 46), randint(38, 46))
@@ -33,16 +33,31 @@ class Asteroid(Button):
         self.player = player
         # Remembers if it is shiny or not
         self.shiny = shiny
+        # Adds a rotation
+        self.random_rotation_vector = Vec3(uniform(-2, 2), uniform(-2, 2), uniform(-2, 2))
+        # Adds the movement if needed
+        self.movement_vector = movement_vector
+
+    def update(self):
+        self.rotation += self.random_rotation_vector
+        if self.movement_vector is not None:
+            self.position += self.movement_vector * time.dt
 
     def input(self, key):
         if self.hovered:
-            if key == "space" and self.destroyable is True and (self.player is None or self.player.alive is True):
+            if key in (
+                    "space", "gamepad alt", "gamepad left alt",
+                    "gamepad a", "gamepad left trigger", "gamepad right trigger"
+            ) and self.destroyable is True and (self.player is None or self.player.alive is True):
                 self.visible = False
                 self.destroyable = False
                 self.collider = None
 
                 # Gives the points to the player
-                self.player.add_points(1 if self.shiny is False else 5)
+                points = 1 if self.shiny is False else 5
+                if self.movement_vector is not None:
+                    points += 2
+                self.player.add_points(points)
 
                 # Plays the explosion sound
                 # If there is no defined player, plays the sound at volume 0.25

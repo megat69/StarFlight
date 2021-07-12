@@ -86,11 +86,8 @@ skybox["entities"]["right"].rotation = (0, 90, 90)
 skybox["entities"]["top"].rotation = (0, 0, 0)
 skybox["entities"]["bottom"].rotation = (0, 0, 0)
 
-# TODO : Movement lines
-# TODO : Controller support
-
 # Creation of the player
-player = Controller(points_enabled=True, ship_model=3)
+player = Controller(points_enabled=True, ship_model=0)
 
 # Fading in the scene
 scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
@@ -113,18 +110,23 @@ def tuple_add(tuple_a:tuple, tuple_b:tuple):
 asteroids_list = [
     Asteroid(
         position=(
-            uniform(-skybox_scale/2, skybox_scale/2),
-            uniform(-skybox_scale/2, skybox_scale/2),
-            uniform(-skybox_scale/2, skybox_scale/2)
+            uniform(-skybox_scale/3, skybox_scale/3),
+            uniform(-skybox_scale/3, skybox_scale/3),
+            uniform(-skybox_scale/3, skybox_scale/3)
         ),
         scale=uniform(0.1, 1),
         player = player
     ) for _ in range(10)
 ]
-asteroid_spawn_cooldown = randint(3, 8)
+
+asteroid_spawn_cooldown_min = 6
+asteroid_spawn_cooldown_max = 8
+asteroid_spawn_cooldown = uniform(asteroid_spawn_cooldown_min, asteroid_spawn_cooldown_max)
 
 def update():
     global asteroid_spawn_cooldown
+    global asteroid_spawn_cooldown_min
+    global asteroid_spawn_cooldown_max
     global RPC_update_cooldown
 
     # Updates the RPC cooldown
@@ -151,19 +153,35 @@ def update():
     asteroid_spawn_cooldown -= time.dt
     if asteroid_spawn_cooldown <= 0 or len(asteroids_list) <= 8:
         print("Asteroid spawned !")
+        # Adding a movement vector sometimes
+        movement_vector = None
+        if uniform(0, 1) > 0.8:
+            movement_vector = Vec3(
+                uniform(-2, -2),
+                uniform(-2, -2),
+                uniform(-2, -2)
+            )
+
+        # Spawining the asteroid
         asteroids_list.append(
             Asteroid(
                 position=tuple_add((
-                    uniform(-skybox_scale / 2, skybox_scale / 2),
-                    uniform(-skybox_scale / 2, skybox_scale / 2),
-                    uniform(-skybox_scale / 2, skybox_scale / 2)
+                    uniform(-skybox_scale / 3, skybox_scale / 3),
+                    uniform(-skybox_scale / 3, skybox_scale / 3),
+                    uniform(-skybox_scale / 3, skybox_scale / 3)
                 ), player.position),
                 scale=uniform(0.1, 1),
                 player = player,
-                shiny = uniform(0, 1) > 0.9
+                shiny = uniform(0, 1) > 0.9,
+                movement_vector=movement_vector
             )
         )
-        asteroid_spawn_cooldown = randint(3, 8)
+
+        # Increment the cooldown
+        if asteroid_spawn_cooldown_min > 1:
+            asteroid_spawn_cooldown_min -= uniform(0, 0.5)
+            asteroid_spawn_cooldown_max -= uniform(0, 0.5)
+        asteroid_spawn_cooldown = uniform(asteroid_spawn_cooldown_min, asteroid_spawn_cooldown_max)
 
     # Destroying asteroids too far away
     # Goes all the way through the list of asteroids and destroys them if too far away
@@ -180,6 +198,5 @@ def update():
                 asteroids_list.pop(index)
         except Exception:
             asteroids_list.pop(index)
-
 
 app.run()

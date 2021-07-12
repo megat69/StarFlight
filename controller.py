@@ -4,7 +4,9 @@ A first person controller.
 from ursina import *
 from random import randint
 
-SENSITIVITY = 70
+MOUSE_SENSITIVITY = 70
+CONTROLLER_SENSITIVITY = 60
+USING_CONTROLLER = False
 
 class Controller(Entity):
     def __init__(self, points_enabled:bool=False, ship_model:int=None):
@@ -29,7 +31,7 @@ class Controller(Entity):
         camera.rotation = (0,0,0)
         camera.fov = 90
         mouse.locked = True
-        self.mouse_sensitivity = Vec2(SENSITIVITY, SENSITIVITY)
+        if USING_CONTROLLER is False: self.mouse_sensitivity = Vec2(MOUSE_SENSITIVITY, MOUSE_SENSITIVITY)
 
         # Ship inside
         if ship_model is not None:
@@ -66,6 +68,7 @@ class Controller(Entity):
         else:
             self.points = None
 
+
     def update(self):
         if self.alive:
             # Updating the speed counter
@@ -73,13 +76,19 @@ class Controller(Entity):
             self.speed_counter.color = color.rgb(randint(161, 165), randint(249, 252), randint(220, 255))
 
             # Speed modification
-            if self.speed > 0.2 and held_keys["control"]:  self.speed -= 0.15 * time.dt
-            if self.speed < 2 and held_keys["shift"]:    self.speed += 0.15 * time.dt
+            if self.speed > 0.2 and (held_keys["control"] or held_keys["gamepad left shoulder"]): self.speed -= 0.25 * time.dt
+            if self.speed < 2 and (held_keys["shift"] or held_keys["gamepad right shoulder"]):    self.speed += 0.25 * time.dt
 
             # Movement updates
-            self.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
+            if USING_CONTROLLER is False:
+                self.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
+            else:
+                self.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY
 
-            self.camera_pivot.rotation_x -= mouse.velocity[1] * self.mouse_sensitivity[0]
+            if USING_CONTROLLER is False:
+                self.camera_pivot.rotation_x -= mouse.velocity[1] * self.mouse_sensitivity[0]
+            else:
+                self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY
             self.camera_pivot.rotation_x = clamp(self.camera_pivot.rotation_x, -90, 90)
 
             self.direction = Vec3(self.forward).normalized()
@@ -135,7 +144,14 @@ class Controller(Entity):
             self.points_counter.position_x = 0.8 - len(str(self.points)) / 8
 
     def input(self, key):
-        if held_keys["space"] and self.ship_inside is not None:
+        if (
+            held_keys["space"]
+            or held_keys["gamepad alt"]
+            or held_keys["gamepad a"]
+            or held_keys["gamepad left alt"]
+            or held_keys["gamepad left trigger"] > 0.5
+            or held_keys["gamepad right trigger"] > 0.5
+        ) and self.ship_inside is not None:
             self.cursor.color = color.lime
             self.cursor.scale = (0.01, 0.35)
             self.cursor.y -= 0.15
