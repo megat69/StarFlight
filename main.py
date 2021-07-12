@@ -111,7 +111,7 @@ asteroids_list = [
         player = player
     ) for _ in range(10)
 ]
-asteroid_spawn_cooldown = randint(5, 10)
+asteroid_spawn_cooldown = randint(3, 8)
 
 def update():
     global asteroid_spawn_cooldown
@@ -142,7 +142,7 @@ def update():
                 shiny = uniform(0, 1) > 0.9
             )
         )
-        asteroid_spawn_cooldown = randint(5, 10)
+        asteroid_spawn_cooldown = randint(3, 8)
 
     # Destroying asteroids too far away
     # Goes all the way through the list of asteroids and destroys them if too far away

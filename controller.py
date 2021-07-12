@@ -4,7 +4,7 @@ A first person controller.
 from ursina import *
 from random import randint
 
-SENSITIVITY = 60
+SENSITIVITY = 70
 
 class Controller(Entity):
     def __init__(self, points_enabled:bool=False):

@@ -1,5 +1,5 @@
 from ursina import *
-from random import randint
+from random import randint, uniform
 
 class Asteroid(Button):
     """
@@ -19,7 +19,8 @@ class Asteroid(Button):
         # Asteroid creation
         super().__init__(
             parent=scene,
-            model="sphere",
+            model=f"assets/asteroides/{randint(1, 5)}.obj",
+            texture=load_texture("assets/asteroides/Material.001_albedo.jpeg"),
             color=asteroid_color,
             position=position if position is not None else (0, 0, 0),
             scale=scale if scale is not None else 1,
@@ -63,10 +64,15 @@ class Asteroid(Button):
 
                 # Particle creation
                 # Create a particle when the ball collides with something
-                particle = Entity(model='sphere', position=self.position, scale=0, color=color.red,
-                                  add_to_scene_entities=False)
+                particle = Entity(model='assets/explosion/explosion.obj', position=self.position, scale=0,
+                                  color=color.color(randint(0, 44), uniform(0.7, 1), uniform(0.89, 1)),
+                                  add_to_scene_entities=False, rotation=(
+                        randint(0, 360),
+                        randint(0, 360),
+                        randint(0, 360)
+                    ))
                 print(self.scale)
-                particle.animate_scale(tuple(self.scale)[0] * 0.8, tuple(self.scale)[0] * 2.8, curve=curve.out_expo)
+                particle.animate_scale(tuple(self.scale)[0] * 0.2, tuple(self.scale)[0] * 1.8, curve=curve.out_expo)
                 particle.animate_color(color.clear, duration=2, curve=curve.out_expo)
                 destroy(particle, delay=2)
 
