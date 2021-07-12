@@ -13,6 +13,8 @@ import time
 app = Ursina(fullscreen=True)
 window.exit_button.visible = False
 ursina.application.development_mode = False
+skybox_scale = 20
+SHIP_MODEL = 0
 
 # Setting up Discord Rich Presence
 RPC = Presence("864140841341157406")
@@ -34,7 +36,6 @@ skybox = {
     },
     "entities": {}
 }
-skybox_scale = 20
 
 # Back
 skybox["entities"]["back"] = Entity(
@@ -87,7 +88,7 @@ skybox["entities"]["top"].rotation = (0, 0, 0)
 skybox["entities"]["bottom"].rotation = (0, 0, 0)
 
 # Creation of the player
-player = Controller(points_enabled=True, ship_model=0)
+player = Controller(points_enabled=True, ship_model=SHIP_MODEL)
 
 # Fading in the scene
 scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
