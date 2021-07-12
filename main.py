@@ -7,10 +7,17 @@ from random import uniform, randint
 from controller import Controller
 from asteroids import Asteroid
 from math import sqrt
+from pypresence import Presence
+import time
 
 app = Ursina(fullscreen=True)
 window.exit_button.visible = False
 ursina.application.development_mode = False
+
+# Setting up Discord Rich Presence
+RPC = Presence("864140841341157406")
+RPC.connect()
+RPC_update_cooldown = 0
 
 # Playing the game's music
 music = Audio("assets/music.mp3", loop=True, autoplay=True)
@@ -79,8 +86,11 @@ skybox["entities"]["right"].rotation = (0, 90, 90)
 skybox["entities"]["top"].rotation = (0, 0, 0)
 skybox["entities"]["bottom"].rotation = (0, 0, 0)
 
+# TODO : Movement lines
+# TODO : Controller support
+
 # Creation of the player
-player = Controller(points_enabled=True)
+player = Controller(points_enabled=True, ship_model=None)
 
 # Fading in the scene
 scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
@@ -115,6 +125,17 @@ asteroid_spawn_cooldown = randint(3, 8)
 
 def update():
     global asteroid_spawn_cooldown
+    global RPC_update_cooldown
+
+    # Updates the RPC cooldown
+    RPC_update_cooldown -= time.dt
+    if RPC_update_cooldown <= 0:
+        RPC.update(
+            state="Playing in a peaceful atmosphere...",
+            details=f"Current points : {player.points}",
+            start=time.time()
+        )
+        RPC_update_cooldown = 15
 
     if player.alive is False: return
 

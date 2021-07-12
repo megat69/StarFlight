@@ -7,7 +7,7 @@ from random import randint
 SENSITIVITY = 70
 
 class Controller(Entity):
-    def __init__(self, points_enabled:bool=False):
+    def __init__(self, points_enabled:bool=False, ship_model:int=None):
         super().__init__(position=(0, -2.5, 0))
 
         # Crosshair
@@ -23,14 +23,6 @@ class Controller(Entity):
         self.height = 1
         self.camera_pivot = Entity(parent=self, y=self.height)
 
-        # Speed counter
-        self.speed_counter = Text(
-            f"Speed : {self.speed:.3f}",
-            position = (-0.85, -0.45),
-            color = color.rgb(163, 251, 255),
-            font = "assets/font/chintzy_cpu_brk/chintzy.ttf"
-        )
-
         # Camera settings
         camera.parent = self.camera_pivot
         camera.position = (0,0,0)
@@ -38,6 +30,26 @@ class Controller(Entity):
         camera.fov = 90
         mouse.locked = True
         self.mouse_sensitivity = Vec2(SENSITIVITY, SENSITIVITY)
+
+        # Ship inside
+        if ship_model is not None:
+            self.ship_inside = Entity(
+                parent=camera.ui,
+                model="quad",
+                texture=f"assets/ship_model_{ship_model}.png",
+                scale=(1.85, 1)
+            )
+            self.ship_number = ship_model
+        else:
+            self.ship_inside = None
+
+        # Speed counter
+        self.speed_counter = Text(
+            f"Speed : {self.speed:.3f}",
+            position = (-0.85, -0.45),
+            color = color.rgb(163, 251, 255),
+            font = "assets/font/chintzy_cpu_brk/chintzy.ttf"
+        )
 
         # Other settings
         self.gravity = 0
@@ -120,7 +132,19 @@ class Controller(Entity):
             self.points += amount
             self.points_counter.text = f"{self.points} PTS"
 
-            self.points_counter.position_x = 0.8 - len(str(self.points)) / 25
+            self.points_counter.position_x = 0.8 - len(str(self.points)) / 8
 
     def input(self, key):
-        pass
+        if held_keys["space"] and self.ship_inside is not None:
+            self.cursor.color = color.lime
+            self.cursor.scale = (0.01, 0.35)
+            self.cursor.y -= 0.15
+
+            def return_to_standard():
+                self.cursor.color = color.white
+                self.cursor.scale = (0.004, 0.004)
+                self.cursor.y += 0.15
+
+            invoke(return_to_standard, delay=0.4)
+
+
