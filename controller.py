@@ -5,7 +5,7 @@ from ursina import *
 from random import randint
 
 MOUSE_SENSITIVITY = 70
-CONTROLLER_SENSITIVITY = 60
+CONTROLLER_SENSITIVITY = (50, 60)
 USING_CONTROLLER = False
 
 class Controller(Entity):
@@ -82,13 +82,11 @@ class Controller(Entity):
             # Movement updates
             if USING_CONTROLLER is False:
                 self.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
-            else:
-                self.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY
-
-            if USING_CONTROLLER is False:
                 self.camera_pivot.rotation_x -= mouse.velocity[1] * self.mouse_sensitivity[0]
             else:
-                self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY
+                self.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY[1]
+                self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY[0]
+
             self.camera_pivot.rotation_x = clamp(self.camera_pivot.rotation_x, -90, 90)
 
             self.direction = Vec3(self.forward).normalized()
@@ -152,6 +150,7 @@ class Controller(Entity):
             or held_keys["gamepad left trigger"] > 0.5
             or held_keys["gamepad right trigger"] > 0.5
         ) and self.ship_inside is not None:
+            # Hitscan code
             self.cursor.color = color.lime
             self.cursor.scale = (0.01, 0.35)
             self.cursor.y -= 0.15
@@ -162,5 +161,3 @@ class Controller(Entity):
                 self.cursor.y += 0.15
 
             invoke(return_to_standard, delay=0.4)
-
-
