@@ -82,6 +82,11 @@ skybox["entities"]["bottom"].rotation = (0, 0, 0)
 # Creation of the player
 player = Controller(points_enabled=True)
 
+# Fading in the scene
+scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
+scene_hider.animate_color(color.rgb(0, 0, 0, 0), duration=7, curve=curve.out_expo)
+destroy(scene_hider, 7)
+
 def tuple_add(tuple_a:tuple, tuple_b:tuple):
     """
     Adds the content of two tuples together.
