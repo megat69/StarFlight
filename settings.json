@@ -6,10 +6,19 @@
   "controller_sensitivity": [50, 60],
   "controller_invert_x_axis": true,
   "controller_invert_y_axis": false,
+  "rich_presence_enabled": true,
+  "fullscreen_enabled": true,
+  "points_enabled": true,
   "volume": {
     "master": 1,
     "music": 1,
     "sfx": 1
   },
-  "rich_presence_enabled": true
+  "hud": {
+    "hud_enabled": true,
+    "speed_counter_enabled": true,
+    "closest_asteroid_enabled": true,
+    "points_enabled": true,
+    "crosshair_enabled": true
+  }
 }
