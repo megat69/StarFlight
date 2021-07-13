@@ -1,0 +1,15 @@
+{
+  "skybox_scale": 20,
+  "ship_model": 0,
+  "using_controller": false,
+  "mouse_sensitivity": 60,
+  "controller_sensitivity": [50, 60],
+  "controller_invert_x_axis": true,
+  "controller_invert_y_axis": false,
+  "volume": {
+    "master": 1,
+    "music": 1,
+    "sfx": 1
+  },
+  "rich_presence_enabled": true
+}

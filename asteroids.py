@@ -1,5 +1,10 @@
 from ursina import *
 from random import randint, uniform
+import json
+
+with open("settings.json", "r", encoding="utf-8") as f:
+    settings = json.load(f)
+    VOLUME = settings["volume"]
 
 class Asteroid(Button):
     """
@@ -14,7 +19,7 @@ class Asteroid(Button):
             # Gold color if the asteroid is shiny
             asteroid_color = color.gold
             # Also plays a little sound when one spawns
-            Audio("assets/shiny_appeared.wav", loop=False, autoplay=True)
+            Audio("assets/shiny_appeared.wav", loop=False, autoplay=True, volume=VOLUME["master"] * VOLUME["sfx"])
 
         # Asteroid creation
         super().__init__(
@@ -75,7 +80,7 @@ class Asteroid(Button):
                 # Locates the correct explosion sound depending on if the asteroid is shiny or not
                 explosion_sound = "assets/explosion.mp3" if self.shiny is False else "assets/golden_asteroid.wav"
                 # Finally plays the audio
-                Audio(explosion_sound, loop=False, autoplay=False, volume=volume).play()
+                Audio(explosion_sound, loop=False, autoplay=False, volume=volume * VOLUME["master"] * VOLUME["sfx"]).play()
 
                 # Particle creation
                 # Create a particle when the ball collides with something

@@ -9,20 +9,32 @@ from asteroids import Asteroid
 from math import sqrt
 from pypresence import Presence
 import time
+import json
 
 app = Ursina(fullscreen=True)
 window.exit_button.visible = False
 ursina.application.development_mode = False
-skybox_scale = 20
-SHIP_MODEL = 0
+
+# Settings
+with open("settings.json", "r", encoding="utf-8") as f:
+    settings = json.load(f)
+    SKYBOX_SCALE = settings["skybox_scale"]
+    SHIP_MODEL = settings["ship_model"]
+    VOLUME = settings["volume"]
+    RICH_PRESENCE_ENABLED = settings["rich_presence_enabled"]
 
 # Setting up Discord Rich Presence
-RPC = Presence("864140841341157406")
-RPC.connect()
-RPC_update_cooldown = 0
+if RICH_PRESENCE_ENABLED is True:
+    try:
+        RPC = Presence("864140841341157406")
+        RPC.connect()
+        RPC_update_cooldown = 0
+    except Exception as e:
+        RICH_PRESENCE_ENABLED = False
+        print("Rich Presence has been disabled, since the following error occured :", e)
 
 # Playing the game's music
-music = Audio("assets/music.mp3", loop=True, autoplay=True)
+music = Audio("assets/music.mp3", loop=True, autoplay=True, volume=VOLUME["master"] * VOLUME["music"])
 
 # Create a skybox
 skybox = {
@@ -42,42 +54,42 @@ skybox["entities"]["back"] = Entity(
     model="plane",
     texture=skybox["textures"]["back"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Front
 skybox["entities"]["front"] = Entity(
     model="plane",
     texture=skybox["textures"]["front"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Left
 skybox["entities"]["left"] = Entity(
     model="plane",
     texture=skybox["textures"]["left"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Right
 skybox["entities"]["right"] = Entity(
     model="plane",
     texture=skybox["textures"]["right"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Top
 skybox["entities"]["top"] = Entity(
     model="plane",
     texture=skybox["textures"]["top"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Bottom
 skybox["entities"]["bottom"] = Entity(
     model="plane",
     texture=skybox["textures"]["bottom"],
     double_sided=True,
-    scale=skybox_scale
+    scale=SKYBOX_SCALE
 )
 # Rotating them properly
 skybox["entities"]["back"].rotation = (90, 90, 0)
@@ -111,9 +123,9 @@ def tuple_add(tuple_a:tuple, tuple_b:tuple):
 asteroids_list = [
     Asteroid(
         position=(
-            uniform(-skybox_scale/3, skybox_scale/3),
-            uniform(-skybox_scale/3, skybox_scale/3),
-            uniform(-skybox_scale/3, skybox_scale/3)
+            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3)
         ),
         scale=uniform(0.1, 1),
         player = player
@@ -129,26 +141,32 @@ def update():
     global asteroid_spawn_cooldown_min
     global asteroid_spawn_cooldown_max
     global RPC_update_cooldown
+    global RICH_PRESENCE_ENABLED
 
     # Updates the RPC cooldown
-    RPC_update_cooldown -= time.dt
-    if RPC_update_cooldown <= 0:
-        RPC.update(
-            state="Playing in a peaceful atmosphere...",
-            details=f"Current points : {player.points}",
-            start=time.time()
-        )
-        RPC_update_cooldown = 15
+    if RICH_PRESENCE_ENABLED is True:
+        try:
+            RPC_update_cooldown -= time.dt
+            if RPC_update_cooldown <= 0:
+                RPC.update(
+                    state="Playing in a peaceful atmosphere...",
+                    details=f"Current points : {player.points}",
+                    start=time.time()
+                )
+                RPC_update_cooldown = 15
+        except Exception as e:
+            RICH_PRESENCE_ENABLED = False
+            print("Rich Presence has been disabled, since the following error occured :", e)
 
     if player.alive is False: return
 
     # Skybox placement
-    skybox["entities"]["back"].position = tuple_add(tuple(player.position), (-skybox_scale/2, 0, 0))
-    skybox["entities"]["front"].position = tuple_add(tuple(player.position), (skybox_scale/2, 0, 0))
-    skybox["entities"]["left"].position = tuple_add(tuple(player.position), (0, 0, skybox_scale/2))
-    skybox["entities"]["right"].position = tuple_add(tuple(player.position), (0, 0, -skybox_scale/2))
-    skybox["entities"]["top"].position = tuple_add(tuple(player.position), (0, skybox_scale/2, 0))
-    skybox["entities"]["bottom"].position = tuple_add(tuple(player.position), (0, -skybox_scale/2, 0))
+    skybox["entities"]["back"].position = tuple_add(tuple(player.position), (-SKYBOX_SCALE / 2, 0, 0))
+    skybox["entities"]["front"].position = tuple_add(tuple(player.position), (SKYBOX_SCALE / 2, 0, 0))
+    skybox["entities"]["left"].position = tuple_add(tuple(player.position), (0, 0, SKYBOX_SCALE / 2))
+    skybox["entities"]["right"].position = tuple_add(tuple(player.position), (0, 0, -SKYBOX_SCALE / 2))
+    skybox["entities"]["top"].position = tuple_add(tuple(player.position), (0, SKYBOX_SCALE / 2, 0))
+    skybox["entities"]["bottom"].position = tuple_add(tuple(player.position), (0, -SKYBOX_SCALE / 2, 0))
 
     # Randomly spawns asteroids
     asteroid_spawn_cooldown -= time.dt
@@ -158,18 +176,18 @@ def update():
         movement_vector = None
         if uniform(0, 1) > 0.8:
             movement_vector = Vec3(
-                uniform(-2, -2),
-                uniform(-2, -2),
-                uniform(-2, -2)
+                uniform(-2, 2),
+                uniform(-2, 2),
+                uniform(-2, 2)
             )
 
         # Spawining the asteroid
         asteroids_list.append(
             Asteroid(
                 position=tuple_add((
-                    uniform(-skybox_scale / 3, skybox_scale / 3),
-                    uniform(-skybox_scale / 3, skybox_scale / 3),
-                    uniform(-skybox_scale / 3, skybox_scale / 3)
+                    uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+                    uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+                    uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3)
                 ), player.position),
                 scale=uniform(0.1, 1),
                 player = player,
@@ -194,7 +212,7 @@ def update():
                     (player.position[0] - asteroid.position[0])**2 +
                     (player.position[1] - asteroid.position[1])**2 +
                     (player.position[2] - asteroid.position[2])**2
-            ) > 4 * (skybox_scale / 3):
+            ) > 4 * (SKYBOX_SCALE / 3):
                 destroy(asteroid)
                 asteroids_list.pop(index)
         except Exception:

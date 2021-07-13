@@ -3,10 +3,14 @@ A first person controller.
 """
 from ursina import *
 from random import randint
+import json
 
-MOUSE_SENSITIVITY = 70
-CONTROLLER_SENSITIVITY = (50, 60)
-USING_CONTROLLER = False
+with open("settings.json", "r", encoding="utf-8") as f:
+    settings = json.load(f)
+    MOUSE_SENSITIVITY = settings["mouse_sensitivity"]
+    CONTROLLER_SENSITIVITY = tuple(settings["controller_sensitivity"])
+    USING_CONTROLLER = settings["using_controller"]
+    CONTROLLER_AXIS_INVERSION = (settings["controller_invert_y_axis"], settings["controller_invert_x_axis"])
 
 class Controller(Entity):
     def __init__(self, points_enabled:bool=False, ship_model:int=None):
@@ -81,13 +85,16 @@ class Controller(Entity):
 
             # Movement updates
             if USING_CONTROLLER is False:
-                self.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
+                self.camera_pivot.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
                 self.camera_pivot.rotation_x -= mouse.velocity[1] * self.mouse_sensitivity[0]
             else:
-                self.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY[1]
-                self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY[0]
+                self.camera_pivot.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY[1]\
+                                   * (-1 if CONTROLLER_AXIS_INVERSION[1] is True else 1)
+                self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY[0]\
+                                                * (-1 if CONTROLLER_AXIS_INVERSION[0] is True else 1)
 
-            self.camera_pivot.rotation_x = clamp(self.camera_pivot.rotation_x, -90, 90)
+            # This ↓ blocks the camera between -90 degrees and 90 degrees vertical
+            # self.camera_pivot.rotation_x = clamp(self.camera_pivot.rotation_x, -90, 90)
 
             self.direction = Vec3(self.forward).normalized()
 
@@ -120,8 +127,9 @@ class Controller(Entity):
                     position = (0, -0.05),
                     origin=(0, 0)
                 )
+                keybind = "'Shift' + 'Q'" if USING_CONTROLLER is False else "START"
                 self.score_exit_text = Text(
-                    "Press 'Shift' + 'Q' to exit.",
+                    f"Press {keybind} to exit.",
                     color=color.rgb(0, 0, 0, 0),
                     position = (0, -0.1),
                     origin=(0, 0)
@@ -129,6 +137,8 @@ class Controller(Entity):
                 self.death_text.animate_color(color.rgb(255, 255, 255, 255), duration=2, curve=curve.out_expo)
                 self.score_death_text.animate_color(color.rgb(255, 255, 255, 255), duration=4, curve=curve.out_expo)
                 self.score_exit_text.animate_color(color.rgb(255, 255, 255, 255), duration=6, curve=curve.out_expo)
+        elif USING_CONTROLLER is True and held_keys["gamepad start"]:
+            quit(0)
 
     def add_points(self, amount:int=1):
         """
@@ -152,7 +162,7 @@ class Controller(Entity):
         ) and self.ship_inside is not None:
             # Hitscan code
             self.cursor.color = color.lime
-            self.cursor.scale = (0.01, 0.35)
+            self.cursor.scale = (0.01, 0.30)
             self.cursor.y -= 0.15
 
             def return_to_standard():
