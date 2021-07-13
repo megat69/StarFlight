@@ -23,6 +23,7 @@ with open("settings.json", "r", encoding="utf-8") as f:
     CONTROLLER_AXIS_INVERSION = (settings["controller_invert_y_axis"], settings["controller_invert_x_axis"])
     HUD = settings["hud"]
     POINTS_ENABLED = settings["points_enabled"]
+    ADVANCED_SETTINGS = settings["advanced_settings"]
 
     app = Ursina(fullscreen=settings["fullscreen_enabled"])
     window.exit_button.visible = False
@@ -36,7 +37,7 @@ class Controller(Entity):
             self.cursor = Entity(
                 parent=camera.ui,
                 model='quad',
-                color=color.white,
+                color=color.rgba(*ADVANCED_SETTINGS["crosshair_RGBA"]),
                 scale=.004
             )
 
@@ -68,19 +69,19 @@ class Controller(Entity):
         # Speed counter
         if HUD["hud_enabled"] is True and HUD["speed_counter_enabled"] is True:
             self.speed_counter = Text(
-                f"Speed : {self.speed:.3f}",
-                position = (-0.85, -0.45),
-                color = color.rgb(163, 251, 255),
-                font = "assets/font/chintzy_cpu_brk/chintzy.ttf"
+                f"{ADVANCED_SETTINGS['speed_counter']['text']}{self.speed:.3f}",
+                position = tuple(ADVANCED_SETTINGS['speed_counter']['position']),
+                color = color.rgb(*ADVANCED_SETTINGS["main_color_RGBA"]),
+                font = ADVANCED_SETTINGS["main_font_path"]
             )
 
         if HUD["hud_enabled"] is True and HUD["closest_asteroid_enabled"] is True:
             # Closest asteroid indicator
             self.closest_asteroid_indicator = Text(
-                "Closest asteroid : m",
-                position=(0, -0.45),
-                color=color.rgb(163, 251, 255),
-                font="assets/font/chintzy_cpu_brk/chintzy.ttf",
+                ADVANCED_SETTINGS["closest_asteroid"]["text"]+"?m",
+                position=tuple(ADVANCED_SETTINGS["closest_asteroid"]["position"]),
+                color=color.rgb(*ADVANCED_SETTINGS["main_color_RGBA"]),
+                font=ADVANCED_SETTINGS["main_font_path"],
                 origin=(0, 0)
             )
 
@@ -88,8 +89,8 @@ class Controller(Entity):
         self.compass = Text(
             "Facing : ",
             position=(0, -0.4),
-            color=color.rgb(163, 251, 255),
-            font="assets/font/chintzy_cpu_brk/chintzy.ttf",
+            color=color.rgb(*ADVANCED_SETTINGS["main_color_RGBA"]),
+            font=ADVANCED_SETTINGS["main_font_path"],
             origin=(0, 0)
         )"""
 
@@ -101,10 +102,10 @@ class Controller(Entity):
             self.points = 0
             if HUD["hud_enabled"] is True and HUD["points_enabled"] is True:
                 self.points_counter = Text(
-                    f"{self.points} PTS",
-                    position = (0.8, -0.45),
-                    color = color.rgb(163, 251, 255),
-                    font = "assets/font/chintzy_cpu_brk/chintzy.ttf"
+                    str(self.points) + ADVANCED_SETTINGS["points"]["text"],
+                    position = tuple(ADVANCED_SETTINGS["points"]["position"]),
+                    color = color.rgb(*ADVANCED_SETTINGS["main_color_RGBA"]),
+                    font = ADVANCED_SETTINGS["main_font_path"]
                 )
         else:
             self.points = None
@@ -114,7 +115,7 @@ class Controller(Entity):
         if self.alive:
             if HUD["hud_enabled"] is True and HUD["speed_counter_enabled"] is True:
                 # Updating the speed counter
-                self.speed_counter.text = f"Speed : {self.speed:.3f}"
+                self.speed_counter.text = f"{ADVANCED_SETTINGS['speed_counter']['text']}{self.speed:.3f}"
 
             if HUD["hud_enabled"] is True and HUD["closest_asteroid_enabled"] is True:
                 def sort_first(elem):
@@ -135,7 +136,8 @@ class Controller(Entity):
                 skybox_distance.sort(key=sort_first)
                 # Updating the closest asteroid indicator by finding the closest asteroid
                 self.closest_asteroid_indicator.text = \
-                    f"Closest asteroid : {closest_asteroid[0][0]:.0f}m - Direction : {skybox_distance[0][1].upper()}"
+                    ADVANCED_SETTINGS["closest_asteroid"]["text"] + \
+                    f"{closest_asteroid[0][0]:.0f}m - Direction : {skybox_distance[0][1].upper()}"
 
             self.direction = Vec3(self.forward).normalized()
 
@@ -175,7 +177,7 @@ class Controller(Entity):
                 # They are therefore dead.
                 self.alive = False
                 # Playing the death audio
-                Audio("assets/player_death.wav", loop=False, autoplay=True)
+                Audio(ADVANCED_SETTINGS["audio"]["player_death"], loop=False, autoplay=True)
 
                 # Creating a square on the whole UI that blends in
                 self.death_cover = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 0), scale=3)
@@ -186,28 +188,34 @@ class Controller(Entity):
 
                 # Adding the death text
                 self.death_text = Text(
-                    "You are dead.",
-                    color=color.rgb(0, 0, 0, 0),
+                    ADVANCED_SETTINGS["death_texts"]["text1"],
+                    color=color.rgb(*ADVANCED_SETTINGS["death_texts"]["start_color_RGBA"]),
                     origin=(0, 0)
                 )
                 if POINTS_ENABLED is True:
                     self.score_death_text = Text(
-                        f"You scored {self.points} points.",
-                        color=color.rgb(0, 0, 0, 0),
+                        ADVANCED_SETTINGS["death_texts"]["text2"].format(self.points),
+                        color=color.rgb(*ADVANCED_SETTINGS["death_texts"]["start_color_RGBA"]),
                         position = (0, -0.05),
                         origin=(0, 0)
                     )
                 keybind = "'Shift' + 'Q'" if USING_CONTROLLER is False else "START"
                 self.score_exit_text = Text(
-                    f"Press {keybind} to exit.",
-                    color=color.rgb(0, 0, 0, 0),
+                    ADVANCED_SETTINGS["death_texts"]["text3"].format(keybind),
+                    color=color.rgb(*ADVANCED_SETTINGS["death_texts"]["start_color_RGBA"]),
                     position = (0, -0.1),
                     origin=(0, 0)
                 )
-                self.death_text.animate_color(color.rgb(255, 255, 255, 255), duration=2, curve=curve.out_expo)
+                self.death_text.animate_color(color.rgb(*ADVANCED_SETTINGS["death_texts"]["end_color_RGBA"]),
+                                              duration=ADVANCED_SETTINGS["death_texts"]["blend_duration"],
+                                              curve=curve.out_expo)
                 if POINTS_ENABLED is True:
-                    self.score_death_text.animate_color(color.rgb(255, 255, 255, 255), duration=4, curve=curve.out_expo)
-                self.score_exit_text.animate_color(color.rgb(255, 255, 255, 255), duration=6, curve=curve.out_expo)
+                    self.score_death_text.animate_color(color.rgb(*ADVANCED_SETTINGS["death_texts"]["end_color_RGBA"]),
+                                                        duration=ADVANCED_SETTINGS["death_texts"]["blend_duration"] * 2,
+                                                        curve=curve.out_expo)
+                self.score_exit_text.animate_color(color.rgb(*ADVANCED_SETTINGS["death_texts"]["end_color_RGBA"]),
+                                                   duration=ADVANCED_SETTINGS["death_texts"]["blend_duration"] * 3,
+                                                   curve=curve.out_expo)
         elif USING_CONTROLLER is True and held_keys["gamepad start"]:
             quit(0)
 
@@ -219,9 +227,10 @@ class Controller(Entity):
         if self.points is not None:
             self.points += amount
             if HUD["hud_enabled"] is True and HUD["points_enabled"] is True:
-                self.points_counter.text = f"{self.points} PTS"
+                self.points_counter.text = str(self.points) + ADVANCED_SETTINGS["points"]["text"]
 
-                self.points_counter.position_x = 0.8 - len(str(self.points)) / 8
+                self.points_counter.position_x = self.points + ADVANCED_SETTINGS["points"]["position"][0]\
+                                                 - len(str(self.points)) / 8
 
     def input(self, key):
         if (
@@ -234,12 +243,12 @@ class Controller(Entity):
         ) and self.ship_inside is not None\
                 and HUD["hud_enabled"] is True and HUD["crosshair_enabled"] is True:
             # Hitscan code
-            self.cursor.color = color.lime
+            self.cursor.color = color.rgb(*ADVANCED_SETTINGS["laser_RGBA"])
             self.cursor.scale = (0.01, 0.30)
             self.cursor.y -= 0.15
 
             def return_to_standard():
-                self.cursor.color = color.white
+                self.cursor.color = color.rgb(*ADVANCED_SETTINGS["crosshair_RGBA"])
                 self.cursor.scale = (0.004, 0.004)
                 self.cursor.y += 0.15
 
@@ -249,22 +258,27 @@ class Asteroid(Button):
     """
     The asteroids of the game.
     """
-
     def __init__(self, position=None, scale=None, shiny:bool=False, movement_vector=None):
         # Assigns a random color to the asteroid
         if shiny is False:
-            asteroid_color = color.rgb(randint(63, 67), randint(38, 46), randint(38, 46))
+            asteroid_color = color.rgb(randint(
+                *ADVANCED_SETTINGS["asteroid_colors"]["R"]
+            ), randint(
+                *ADVANCED_SETTINGS["asteroid_colors"]["G"]
+            ), randint(
+                *ADVANCED_SETTINGS["asteroid_colors"]["B"]
+            ))
         else:
             # Gold color if the asteroid is shiny
-            asteroid_color = color.gold
+            asteroid_color = ADVANCED_SETTINGS["asteroid_colors"]["gold"]
             # Also plays a little sound when one spawns
-            Audio("assets/shiny_appeared.wav", loop=False, autoplay=True, volume=VOLUME["master"] * VOLUME["sfx"])
+            Audio(ADVANCED_SETTINGS["audio"]["shiny_appeared"], loop=False, autoplay=True, volume=VOLUME["master"] * VOLUME["sfx"])
 
         # Asteroid creation
         super().__init__(
             parent=scene,
-            model=f"assets/asteroides/{randint(1, 5)}.obj",
-            texture=load_texture("assets/asteroides/Material.001_albedo.jpeg"),
+            model=ADVANCED_SETTINGS["models"]["asteroides"]+f"{randint(1, 5)}.obj",
+            texture=load_texture(ADVANCED_SETTINGS["models"]["asteroides_texture"]),
             color=asteroid_color,
             position=position if position is not None else (0, 0, 0),
             scale=scale if scale is not None else 1,
@@ -315,27 +329,52 @@ class Asteroid(Button):
                 elif volume > 0.75:
                     volume = 0.75
                 # Locates the correct explosion sound depending on if the asteroid is shiny or not
-                explosion_sound = "assets/explosion.mp3" if self.shiny is False else "assets/golden_asteroid.wav"
+                explosion_sound = ADVANCED_SETTINGS["audio"]["explosion"] if self.shiny is False\
+                    else ADVANCED_SETTINGS["audio"]["golden_asteroid_exploision"]
                 # Finally plays the audio
                 Audio(explosion_sound, loop=False, autoplay=False, volume=volume * VOLUME["master"] * VOLUME["sfx"]).play()
 
                 # Particle creation
                 # Create a particle when the ball collides with something
-                particle = Entity(model='assets/explosion/explosion.obj', position=self.position, scale=0,
-                                  color=color.color(randint(0, 44), uniform(0.7, 1), uniform(0.89, 1)),
+                particle = Entity(model=ADVANCED_SETTINGS["models"]["explosion"], position=self.position, scale=0,
+                                  color=color.color(randint(
+                                      *ADVANCED_SETTINGS["explosion_particle"]["color"]["H"]
+                                  ), uniform(
+                                      *ADVANCED_SETTINGS["explosion_particle"]["color"]["S"]
+                                  ), uniform(
+                                      *ADVANCED_SETTINGS["explosion_particle"]["color"]["V"]
+                                  )),
                                   add_to_scene_entities=False, rotation=(
                         randint(0, 360),
                         randint(0, 360),
                         randint(0, 360)
                     ))
-                print(self.scale)
-                particle.animate_scale(tuple(self.scale)[0] * 0.2, tuple(self.scale)[0] * 1.8, curve=curve.out_expo)
-                particle.animate_color(color.clear, duration=2, curve=curve.out_expo)
-                destroy(particle, delay=2)
+                particle.animate_scale(
+                    tuple(self.scale)[0] * ADVANCED_SETTINGS["explosion_particle"]["scale"]["min"],
+                    tuple(self.scale)[0] * ADVANCED_SETTINGS["explosion_particle"]["scale"]["max"],
+                    curve=curve.out_expo
+                )
+                particle.animate_color(
+                    color.clear, duration=ADVANCED_SETTINGS["explosion_particle"]["duration"],
+                    curve=curve.out_expo
+                )
+                destroy(particle, delay=ADVANCED_SETTINGS["explosion_particle"]["duration"])
+
+                # Screenshake if distance with player is below 2.5
+                if distance(self, player) < ADVANCED_SETTINGS["screenshake"]["distance"]:
+                    camera.shake(duration=ADVANCED_SETTINGS["screenshake"]["duration"],
+                                 magnitude=ADVANCED_SETTINGS["screenshake"]["magnitude"])
+
+                    bloom = Entity(model="sphere", position=self.position,
+                                   color=color.rgb(*ADVANCED_SETTINGS["explosion_bloom"]["start_RGBA"]), scale=self.scale)
+                    bloom.animate_scale(3, duration=ADVANCED_SETTINGS["explosion_bloom"]["duration"])
+                    bloom.animate_color(color.rgb(*ADVANCED_SETTINGS["explosion_bloom"]["end_RGBA"]),
+                                        duration=ADVANCED_SETTINGS["explosion_bloom"]["duration"])
+                    destroy(bloom, delay=ADVANCED_SETTINGS["explosion_bloom"]["duration"])
 
                 # Destroys the asteroid
                 print("Asteroid destroyed.")
-                destroy(self, 2)
+                destroy(self, ADVANCED_SETTINGS["explosion_particle"]["duration"])
 
 if __name__ == "__main__":
     # Setting up Discord Rich Presence
@@ -349,17 +388,17 @@ if __name__ == "__main__":
             print("Rich Presence has been disabled, since the following error occured :", e)
 
     # Playing the game's music
-    music = Audio("assets/music.mp3", loop=True, autoplay=True, volume=VOLUME["master"] * VOLUME["music"])
+    music = Audio(ADVANCED_SETTINGS["audio"]["music"], loop=True, autoplay=True, volume=VOLUME["master"] * VOLUME["music"])
 
     # Create a skybox
     skybox = {
         "textures": {
-            "back": load_texture(f"assets/skybox/back.png"),
-            "bottom": load_texture(f"assets/skybox/bottom.png"),
-            "front": load_texture(f"assets/skybox/front.png"),
-            "left": load_texture(f"assets/skybox/left.png"),
-            "right": load_texture(f"assets/skybox/right.png"),
-            "top": load_texture(f"assets/skybox/top.png")
+            "back": load_texture(ADVANCED_SETTINGS["skybox_location"] + "back.png"),
+            "bottom": load_texture(ADVANCED_SETTINGS["skybox_location"] + "bottom.png"),
+            "front": load_texture(ADVANCED_SETTINGS["skybox_location"] + "front.png"),
+            "left": load_texture(ADVANCED_SETTINGS["skybox_location"] + "left.png"),
+            "right": load_texture(ADVANCED_SETTINGS["skybox_location"] + "right.png"),
+            "top": load_texture(ADVANCED_SETTINGS["skybox_location"] + "top.png")
         },
         "entities": {}
     }
@@ -417,11 +456,11 @@ if __name__ == "__main__":
                 uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3)
             ),
             scale=uniform(0.1, 1)
-        ) for _ in range(10)
+        ) for _ in range(ADVANCED_SETTINGS["default_asteroid_amount"])
     ]
 
-    asteroid_spawn_cooldown_min = 6
-    asteroid_spawn_cooldown_max = 8
+    asteroid_spawn_cooldown_min = ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["min"]
+    asteroid_spawn_cooldown_max = ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["max"]
     asteroid_spawn_cooldown = uniform(asteroid_spawn_cooldown_min, asteroid_spawn_cooldown_max)
 
     def update():
@@ -458,35 +497,60 @@ if __name__ == "__main__":
 
         # Randomly spawns asteroids
         asteroid_spawn_cooldown -= time.dt
-        if asteroid_spawn_cooldown <= 0 or len(asteroids_list) <= 8:
+        if asteroid_spawn_cooldown <= 0 or len(asteroids_list) <= ADVANCED_SETTINGS["minimum_asteroids_alive"]:
             print("Asteroid spawned !")
             # Adding a movement vector sometimes
             movement_vector = None
-            if uniform(0, 1) > 0.8:
+            if uniform(0, 1) > ADVANCED_SETTINGS["moving_asteroids_spawn_rate"]:
                 movement_vector = Vec3(
-                    uniform(-2, 2),
-                    uniform(-2, 2),
-                    uniform(-2, 2)
+                    uniform(
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["min"],
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["max"]
+                    ),
+                    uniform(
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["min"],
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["max"]
+                    ),
+                    uniform(
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["min"],
+                        ADVANCED_SETTINGS["moving_asteroids_vector"]["max"]
+                    )
                 )
 
-            # Spawining the asteroid
-            asteroids_list.append(
-                Asteroid(
-                    position=tuple_add((
-                        uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
-                        uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
-                        uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3)
-                    ), player.position),
-                    scale=uniform(0.1, 1),
-                    shiny = uniform(0, 1) > 0.9,
-                    movement_vector=movement_vector
+            # Spawning the asteroid
+            def spawn_asteroid():
+                global asteroids_list
+                asteroids_list.append(
+                    Asteroid(
+                        position=tuple_add((
+                            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+                            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3),
+                            uniform(-SKYBOX_SCALE / 3, SKYBOX_SCALE / 3)
+                        ), player.position),
+                        scale=uniform(
+                            ADVANCED_SETTINGS["asteroid_scale"]["min"],
+                            ADVANCED_SETTINGS["asteroid_scale"]["max"]
+                        ),
+                        shiny = uniform(0, 1) > ADVANCED_SETTINGS["golden_asteroids_spawn_rate"],
+                        movement_vector=movement_vector
+                    )
                 )
-            )
+            spawn_asteroid()
+            while distance(player, asteroids_list[-1]) < 2:
+                destroy(asteroids_list[-1])
+                asteroids_list.pop()
+                spawn_asteroid()
 
             # Increment the cooldown
-            if asteroid_spawn_cooldown_min > 1:
-                asteroid_spawn_cooldown_min -= uniform(0, 0.5)
-                asteroid_spawn_cooldown_max -= uniform(0, 0.5)
+            if asteroid_spawn_cooldown_min > ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["final_cooldown_between_spawns"]:
+                asteroid_spawn_cooldown_min -= uniform(
+                    ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["cooldown_reduction"]["min"],
+                    ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["cooldown_reduction"]["max"]
+                )
+                asteroid_spawn_cooldown_max -= uniform(
+                    ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["cooldown_reduction"]["min"],
+                    ADVANCED_SETTINGS["asteroid_spawn_cooldown"]["cooldown_reduction"]["max"]
+                )
             asteroid_spawn_cooldown = uniform(asteroid_spawn_cooldown_min, asteroid_spawn_cooldown_max)
 
         # Destroying asteroids too far away

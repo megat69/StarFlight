@@ -1,7 +1,7 @@
 {
   "skybox_scale": 20,
   "ship_model": 0,
-  "using_controller": false,
+  "using_controller": true,
   "mouse_sensitivity": 60,
   "controller_sensitivity": [50, 60],
   "controller_invert_x_axis": true,
@@ -20,5 +20,93 @@
     "closest_asteroid_enabled": true,
     "points_enabled": true,
     "crosshair_enabled": true
+  },
+  "advanced_settings": {
+    "golden_asteroids_spawn_rate": 0.9,
+    "moving_asteroids_spawn_rate": 0.8,
+    "minimum_asteroids_alive": 8,
+    "default_asteroid_amount": 10,
+    "crosshair_RGBA": [255, 255, 255, 255],
+    "laser_RGBA": [128, 255, 0, 175],
+    "main_color_RGBA": [163, 251, 255, 255],
+    "main_font_path": "assets/font/chintzy_cpu_brk/chintzy.ttf",
+    "moving_asteroids_vector": {
+      "min": -2,
+      "max": 2
+    },
+    "asteroid_scale": {
+      "min": 0.1,
+      "max": 1
+    },
+    "asteroid_spawn_cooldown": {
+      "min": 6,
+      "max": 8,
+      "cooldown_reduction": {
+        "min": 0,
+        "max": 0.5
+      },
+      "final_cooldown_between_spawns": 1
+    },
+    "speed_counter": {
+      "text": "Speed : ",
+      "position": [-0.85, -0.45]
+    },
+    "closest_asteroid": {
+      "text": "Closest asteroid : ",
+      "position": [0, -0.45]
+    },
+    "points": {
+      "text": " PTS",
+      "position": [0.8, -0.45]
+    },
+    "death_texts": {
+      "start_color_RGBA": [0, 0, 0, 0],
+      "end_color_RGBA": [255, 255, 255, 255],
+      "blend_duration": 2,
+      "text1": "You are dead.",
+      "text2": "You scored {} points.",
+      "text3": "Press {} to exit."
+    },
+    "audio": {
+      "explosion": "assets/explosion.mp3",
+      "golden_asteroid_exploision": "assets/golden_asteroid.wav",
+      "player_death": "assets/player_death.wav",
+      "shiny_appeared": "assets/shiny_appeared.wav",
+      "music": "assets/music.mp3"
+    },
+    "models": {
+      "explosion": "assets/explosion/explosion.obj",
+      "asteroides": "assets/asteroides/",
+      "asteroides_texture": "assets/asteroides/Material.001_albedo.jpeg"
+    },
+    "asteroid_colors": {
+      "gold": [255, 215, 0],
+      "R": [63, 67],
+      "G": [38, 46],
+      "B": [38, 46]
+    },
+    "explosion_particle": {
+      "color": {
+        "H": [0, 44],
+        "S": [0.7, 1],
+        "V": [0.89, 1]
+      },
+      "scale": {
+        "min": 0.2,
+        "max": 1.8
+      },
+      "duration": 2
+    },
+    "skybox_location": "assets/skybox/",
+    "screenshake": {
+      "distance": 4,
+      "magnitude": 2,
+      "duration": 0.4
+    },
+    "explosion_bloom": {
+      "start_RGBA": [255, 255, 255, 120],
+      "end_RGBA": [255, 255, 255, 0],
+      "duration": 0.5
+    }
   }
 }
