@@ -1,7 +1,7 @@
 {
   "skybox_scale": 20,
   "ship_model": 0,
-  "using_controller": true,
+  "using_controller": false,
   "mouse_sensitivity": 60,
   "controller_sensitivity": [50, 60],
   "controller_invert_x_axis": true,
