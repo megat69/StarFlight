@@ -22,8 +22,4 @@ The game is available for both Linux and Windows, with sadly no support for Mac 
 - **BEWARE : If you want to use a controller, you'll have to edit the `controller.py` file and set the variable `USING_CONTROLLER` (line 9) to `True` !**
 
 ## Customisation
-You can change some of the settings in the code itself, including :
-- The mouse sensivity : edit the `controller.py` file and set the variable `MOUSE_SENSITIVITY` (line 7) to whatever value you're comfortable with.
-- The controller sensivity : edit the `controller.py` file and set the variable `CONTROLLER_SENSITIVITY` (line 8) to whatever value you're comfortable with, the first one being the horizontal sensitivity, the second the vertical sensitivity.
-- The render distance (Default is 20) : edit the `main.py` file and set the variable `skybox_scale` (line 16) to whatever value you're comfortable with. Keep in mind that the higher the value is, the slower your game will be (in terms of performance and pace).
-- The spaceship model : edit the `main.py` file and set the variable `SHIP_MODEL` (line 17) to the number of the ship you want. By default, this number is kept between 0 and 2, but you can also add your own ships in the `assets/` folder if you name them `ship_model_NUMBER.png` and select this number on the line 17. You can also set this value to `None`, and in that case, you won't be in a ship, which leads to a more relaxing experience.
+The settings are available in the `settings.json` file.
