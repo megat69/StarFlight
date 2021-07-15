@@ -3,6 +3,7 @@ Just fly in the space.
 """
 from ursina import *
 import ursina.application
+from ursina.shaders import lit_with_shadows_shader
 from random import uniform, randint
 from math import sqrt
 from pypresence import Presence
@@ -29,6 +30,12 @@ with open("settings.json", "r", encoding="utf-8") as f:
     window.exit_button.visible = False
     ursina.application.development_mode = False
 
+    if settings["framerate_cap"] is not None:
+        from panda3d.core import ClockObject
+        globalClock.setMode(ClockObject.MLimited)
+        globalClock.setFrameRate(settings["framerate_cap"])
+
+
 class Controller(Entity):
     def __init__(self, points_enabled:bool=False, ship_model:int=None):
         super().__init__(position=(0, -2.5, 0))
@@ -40,6 +47,11 @@ class Controller(Entity):
                 color=color.rgba(*ADVANCED_SETTINGS["crosshair_RGBA"]),
                 scale=.004
             )
+
+            self.bloom = Entity(parent=camera.ui, model="circle",
+                                color=color.rgb(*ADVANCED_SETTINGS["laser_RGBA"][:-1], 0),
+                                scale=0.3
+                                )
 
         # Player speed, height, and camera pivot
         self.speed = 1
@@ -110,7 +122,6 @@ class Controller(Entity):
         else:
             self.points = None
 
-
     def update(self):
         if self.alive:
             if HUD["hud_enabled"] is True and HUD["speed_counter_enabled"] is True:
@@ -156,10 +167,10 @@ class Controller(Entity):
 
             # Movement updates
             if USING_CONTROLLER is False:
-                self.camera_pivot.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
+                self.rotation_y += mouse.velocity[0] * self.mouse_sensitivity[1]
                 self.camera_pivot.rotation_x -= mouse.velocity[1] * self.mouse_sensitivity[0]
             else:
-                self.camera_pivot.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY[1]\
+                self.rotation_y -= held_keys["gamepad right stick x"] * time.dt * CONTROLLER_SENSITIVITY[1]\
                                    * (-1 if CONTROLLER_AXIS_INVERSION[1] is True else 1)
                 self.camera_pivot.rotation_x += held_keys["gamepad right stick y"] * time.dt * CONTROLLER_SENSITIVITY[0]\
                                                 * (-1 if CONTROLLER_AXIS_INVERSION[0] is True else 1)
@@ -194,7 +205,7 @@ class Controller(Entity):
                 )
                 if POINTS_ENABLED is True:
                     self.score_death_text = Text(
-                        ADVANCED_SETTINGS["death_texts"]["text2"].format(self.points),
+                        ADVANCED_SETTINGS["death_texts"]["text2"].format(round(self.points)),
                         color=color.rgb(*ADVANCED_SETTINGS["death_texts"]["start_color_RGBA"]),
                         position = (0, -0.05),
                         origin=(0, 0)
@@ -225,9 +236,9 @@ class Controller(Entity):
         :param amount: The amount of points to add.
         """
         if self.points is not None:
-            self.points += amount
+            self.points += amount * self.speed
             if HUD["hud_enabled"] is True and HUD["points_enabled"] is True:
-                self.points_counter.text = str(self.points) + ADVANCED_SETTINGS["points"]["text"]
+                self.points_counter.text = str(round(self.points)) + ADVANCED_SETTINGS["points"]["text"]
 
                 self.points_counter.position_x = self.points + ADVANCED_SETTINGS["points"]["position"][0]\
                                                  - len(str(self.points)) / 8
@@ -245,7 +256,13 @@ class Controller(Entity):
             # Hitscan code
             self.cursor.color = color.rgb(*ADVANCED_SETTINGS["laser_RGBA"])
             self.cursor.scale = (0.01, 0.30)
-            self.cursor.y -= 0.15
+            self.cursor.y -= ADVANCED_SETTINGS["laser_duration"]
+
+
+            self.bloom.animate_color(color.rgb(*ADVANCED_SETTINGS["laser_RGBA"][:-1], ADVANCED_SETTINGS["laser_bloom_effect_alpha"]),
+                                     duration=ADVANCED_SETTINGS["laser_duration"])
+            invoke(self.bloom.animate_color, color.rgb(*ADVANCED_SETTINGS["laser_RGBA"][:-1], 0),
+                   duration=ADVANCED_SETTINGS["laser_duration"], delay=ADVANCED_SETTINGS["laser_duration"])
 
             def return_to_standard():
                 self.cursor.color = color.rgb(*ADVANCED_SETTINGS["crosshair_RGBA"])
@@ -270,7 +287,7 @@ class Asteroid(Button):
             ))
         else:
             # Gold color if the asteroid is shiny
-            asteroid_color = ADVANCED_SETTINGS["asteroid_colors"]["gold"]
+            asteroid_color = color.rgb(*ADVANCED_SETTINGS["asteroid_colors"]["gold"])
             # Also plays a little sound when one spawns
             Audio(ADVANCED_SETTINGS["audio"]["shiny_appeared"], loop=False, autoplay=True, volume=VOLUME["master"] * VOLUME["sfx"])
 
@@ -284,6 +301,7 @@ class Asteroid(Button):
             scale=scale if scale is not None else 1,
             collider="sphere",
             highlight_color=asteroid_color
+            ,shader=lit_with_shadows_shader
         )
         # Sets the fact that the asteroid is destroyable
         self.destroyable = True
@@ -315,6 +333,10 @@ class Asteroid(Button):
                     points += 2
                 player.add_points(points)
 
+                # Adds the light
+                light = PointLight(parent=scene, position=self.position, shadows=False)
+                destroy(light, 0.8)
+
                 # Plays the explosion sound
                 # If there is no defined player, plays the sound at volume 0.25
                 if player is None:
@@ -330,9 +352,9 @@ class Asteroid(Button):
                     volume = 0.75
                 # Locates the correct explosion sound depending on if the asteroid is shiny or not
                 explosion_sound = ADVANCED_SETTINGS["audio"]["explosion"] if self.shiny is False\
-                    else ADVANCED_SETTINGS["audio"]["golden_asteroid_exploision"]
+                    else ADVANCED_SETTINGS["audio"]["golden_asteroid_explosion"]
                 # Finally plays the audio
-                Audio(explosion_sound, loop=False, autoplay=False, volume=volume * VOLUME["master"] * VOLUME["sfx"]).play()
+                Audio(explosion_sound, loop=False, autoplay=True, volume=volume * VOLUME["master"] * VOLUME["sfx"])
 
                 # Particle creation
                 # Create a particle when the ball collides with something
@@ -355,13 +377,19 @@ class Asteroid(Button):
                     curve=curve.out_expo
                 )
                 particle.animate_color(
-                    color.clear, duration=ADVANCED_SETTINGS["explosion_particle"]["duration"],
+                    color.color(randint(
+                        *ADVANCED_SETTINGS["explosion_particle"]["color"]["H"]
+                    ), uniform(
+                        *ADVANCED_SETTINGS["explosion_particle"]["color"]["S"]
+                    ), uniform(
+                        *ADVANCED_SETTINGS["explosion_particle"]["color"]["V"]
+                    ), 0), duration=ADVANCED_SETTINGS["explosion_particle"]["duration"],
                     curve=curve.out_expo
                 )
                 destroy(particle, delay=ADVANCED_SETTINGS["explosion_particle"]["duration"])
 
-                # Screenshake if distance with player is below 2.5
-                if distance(self, player) < ADVANCED_SETTINGS["screenshake"]["distance"]:
+                # Screenshake if distance with player is below 2.5 and if not shiny
+                if distance(self, player) < ADVANCED_SETTINGS["screenshake"]["distance"] and self.shiny is False:
                     camera.shake(duration=ADVANCED_SETTINGS["screenshake"]["duration"],
                                  magnitude=ADVANCED_SETTINGS["screenshake"]["magnitude"])
 
@@ -385,7 +413,7 @@ if __name__ == "__main__":
             RPC_update_cooldown = 0
         except Exception as e:
             RICH_PRESENCE_ENABLED = False
-            print("Rich Presence has been disabled, since the following error occured :", e)
+            print("Rich Presence has been disabled, since the following error occurred :", e)
 
     # Playing the game's music
     music = Audio(ADVANCED_SETTINGS["audio"]["music"], loop=True, autoplay=True, volume=VOLUME["master"] * VOLUME["music"])
@@ -426,6 +454,8 @@ if __name__ == "__main__":
     skybox["entities"]["right"].rotation = (0, 90, 90)
     skybox["entities"]["top"].rotation = (0, 0, 0)
     skybox["entities"]["bottom"].rotation = (0, 0, 0)
+
+    ambient_light = AmbientLight(parent=scene, position=(0, 0, 0))
 
     # Fading in the scene
     scene_hider = Entity(parent=camera.ui, model="quad", color=color.rgb(0, 0, 0, 255), scale=3)
@@ -478,12 +508,12 @@ if __name__ == "__main__":
                     RPC.update(
                         state="Playing in a peaceful atmosphere...",
                         details=f"Current points : {player.points}",
-                        start=time.time()
+                        start=int(time.time())
                     )
                     RPC_update_cooldown = 15
             except Exception as e:
                 RICH_PRESENCE_ENABLED = False
-                print("Rich Presence has been disabled, since the following error occured :", e)
+                print("Rich Presence has been disabled, since the following error occurred :", e)
 
         if player.alive is False: return
 
@@ -494,6 +524,7 @@ if __name__ == "__main__":
         skybox["entities"]["right"].position = tuple_add(tuple(player.position), (0, 0, -SKYBOX_SCALE / 2))
         skybox["entities"]["top"].position = tuple_add(tuple(player.position), (0, SKYBOX_SCALE / 2, 0))
         skybox["entities"]["bottom"].position = tuple_add(tuple(player.position), (0, -SKYBOX_SCALE / 2, 0))
+        ambient_light.position = tuple(player.position)
 
         # Randomly spawns asteroids
         asteroid_spawn_cooldown -= time.dt
